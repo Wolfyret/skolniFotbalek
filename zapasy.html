@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zápasy hráče - 2v2</title>
+    <link rel="stylesheet" href="style.css"> <!-- Import externího CSS souboru -->
+    <style>
+        /* Styl pro tlačítko zpět */
+        button {
+            background-color: #4CAF50; /* Zelená barva */
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 0;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        /* Styl pro tlačítko při najetí myší */
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Styl pro umístění tlačítka na stránce */
+        .button-container {
+            text-align: center; /* Centrum tlačítka */
+        }
+    </style>
+</head>
+<body>
+    <h1>Zápasy hráče <span id="player-nick"></span></h1>
+
+    <!-- Tlačítko pro návrat na hlavní stránku -->
+    <div class="button-container">
+        <button onclick="goBack()">Zpět na hlavní stránku</button>
+    </div>
+
+    <table id="matches">
+        <thead>
+            <tr>
+                <th>Datum</th>
+                <th>Hráč 1</th>
+                <th>Hráč 2</th>
+                <th>Skóre</th>
+                <th>Hráč 3</th>
+                <th>Hráč 4</th>
+                <th>Výsledek</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Zápasy budou zobrazeny zde pomocí JavaScriptu -->
+        </tbody>
+    </table>
+
+    <script>
+        let matches = []; // Pole pro zápasy hráče
+        let players = []; // Pole pro hráče (abychom mohli najít jejich nicky)
+
+        // Funkce pro načtení hráčů z CSV souboru
+        function loadPlayers(file, callback) {
+            fetch(file)
+                .then(response => response.text())
+                .then(data => callback(data))
+                .catch(error => console.error("Chyba při načítání souboru hráčů:", error));
+        }
+
+        // Funkce pro načtení zápasů z CSV souboru
+        function loadMatches(file, callback) {
+            fetch(file)
+                .then(response => response.text())
+                .then(data => callback(data))
+                .catch(error => console.error("Chyba při načítání souboru zápasů:", error));
+        }
+
+        // Funkce pro zpracování CSV zápasů
+        function parseMatches(csv) {
+            const rows = csv.split("\n");
+            const matches = [];
+
+            // Zpracování řádků CSV souboru
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i].trim();
+                if (row) {
+                    const values = row.split(",");
+                    const match = {
+                        player1: values[0].trim(),
+                        player2: values[1].trim(),
+                        player3: values[2].trim(),
+                        player4: values[3].trim(),
+                        score1: parseInt(values[4].trim(), 10),
+                        score2: parseInt(values[5].trim(), 10),
+                        date: values[6].trim(),
+                    };
+                    matches.push(match);
+                }
+            }
+
+            return matches;
+        }
+
+        // Funkce pro zpracování CSV hráčů (pro získání nicků)
+        function parsePlayers(csv) {
+            const rows = csv.split("\n");
+            const players = [];
+
+            // Zpracování řádků CSV souboru pro hráče
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i].trim();
+                if (row) {
+                    const values = row.split(",");
+                    const player = {
+                        id: values[0].trim(),
+                        nick: values[1].trim(),
+                    };
+                    players.push(player);
+                }
+            }
+
+            return players;
+        }
+
+        // Funkce pro zobrazení zápasů
+        function displayMatches(playerId) {
+            const tableBody = document.querySelector("#matches tbody");
+
+            // Filtrace zápasů pro konkrétního hráče
+            const playerMatches = matches.filter(match => 
+                match.player1 === playerId || match.player2 === playerId || match.player3 === playerId || match.player4 === playerId
+            );
+
+            playerMatches.forEach(match => {
+                const row = document.createElement("tr");
+
+                // Získání nicků hráčů podle jejich ID
+                const player1Nick = getPlayerNick(match.player1);
+                const player2Nick = getPlayerNick(match.player2);
+                const player3Nick = getPlayerNick(match.player3);
+                const player4Nick = getPlayerNick(match.player4);
+
+                // Určení výsledku zápasu (výhra/prohra)
+                let result = "";
+                if (match.player1 === playerId || match.player2 === playerId) {
+                    result = match.score1 > match.score2 ? "Výhra" : "Prohra";
+                } else {
+                    result = match.score2 > match.score1 ? "Výhra" : "Prohra";
+                }
+
+                const resultClass = result === "Výhra" ? "win" : "lose";
+
+                row.innerHTML = `
+                    <td>${match.date}</td>
+                    <td><a href="?id=${match.player1}" class="profile-link">${player1Nick}</a></td>
+                    <td><a href="?id=${match.player2}" class="profile-link">${player2Nick}</a></td>
+                    <td class="score">${match.score1} - ${match.score2}</td>
+                    <td><a href="?id=${match.player3}" class="profile-link">${player3Nick}</a></td>
+                    <td><a href="?id=${match.player4}" class="profile-link">${player4Nick}</a></td>
+                    <td class="result ${resultClass}">${result}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Funkce pro získání nicku hráče podle ID
+        function getPlayerNick(playerId) {
+            const player = players.find(p => p.id === playerId);
+            return player ? player.nick : "Neznámý hráč";
+        }
+
+        // Funkce pro přechod zpět na hlavní stránku
+        function goBack() {
+            window.location.href = "index.html";  // Změňte na URL hlavní stránky, pokud je jiná
+        }
+
+        // Načteme zápasy a hráče a zobrazíme je při načtení stránky
+        window.onload = function () {
+            const urlParams = new URLSearchParams(window.location.search);
+            const playerId = urlParams.get('id'); // Získáme parametr 'id' z URL
+
+            if (playerId) {
+                loadPlayers("lok.csv", function (csv) {
+                    players = parsePlayers(csv); // Načteme hráče
+                    loadMatches("matches.csv", function (csv) {
+                        matches = parseMatches(csv); // Načteme zápasy
+                        displayMatches(playerId); // Zobrazíme zápasy pro daného hráče
+
+                        // Zobrazení nicku hráče za textem "Zápasy hráče"
+                        const playerNick = getPlayerNick(playerId);
+                        document.getElementById("player-nick").textContent = `(${playerNick})`;
+                    });
+                });
+            }
+        };
+    </script>
+</body>
+</html>
