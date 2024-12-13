@@ -115,7 +115,6 @@ function showProfile(playerId) {
     }
 }
 
-
 // Funkce pro zavření modálního okna
 function closeProfile() {
     document.getElementById("profileModal").style.display = "none";
@@ -136,6 +135,13 @@ window.onload = function () {
             refereeClasses = parseRefereeClasses(data); // Načteme třídy rozhodčích z ref.txt
             assignRefereeClasses(players, refereeClasses); // Přiřadíme třídy rozhodčích k hráčům
             displayLeaderboard(players); // Zobrazíme leaderboard
+
+            // Kontrola URL pro automatické zobrazení profilu, pokud je v URL parametr id
+            const urlParams = new URLSearchParams(window.location.search);
+            const playerId = urlParams.get('id');
+            if (playerId) {
+                showProfile(playerId);  // Automatické zobrazení profilu pro jakýkoliv ID
+            }
         });
     });
 };
