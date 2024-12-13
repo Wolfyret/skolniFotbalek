@@ -133,6 +133,9 @@
                 match.player1 === playerId || match.player2 === playerId || match.player3 === playerId || match.player4 === playerId
             );
 
+            // Seřazení zápasů podle data (nejnovější zápasy nahoře)
+            playerMatches.sort((a, b) => new Date(b.date) - new Date(a.date));
+
             playerMatches.forEach(match => {
                 const row = document.createElement("tr");
 
@@ -164,6 +167,7 @@
                 tableBody.appendChild(row);
             });
         }
+
 
         // Funkce pro získání nicku hráče podle ID
         function getPlayerNick(playerId) {
