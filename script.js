@@ -45,6 +45,39 @@ function parseCSV(csv) {
     return players;
 }
 
+// Funkce pro načtení souboru ref.txt
+function loadRefereeClasses(file, callback) {
+    fetch(file)
+        .then(response => response.text())
+        .then(data => callback(data))
+        .catch(error => console.error("Chyba při načítání souboru:", error));
+}
+
+// Funkce pro zpracování souboru ref.txt
+function parseRefereeClasses(data) {
+    const refereeClasses = {};
+    const lines = data.split("\n");
+
+    lines.forEach(line => {
+        const [id, refereeClass] = line.split(";");
+        if (id && refereeClass) {
+            refereeClasses[id.trim()] = refereeClass.trim();
+        }
+    });
+
+    return refereeClasses;
+}
+
+// Funkce pro přiřazení třídy rozhodčího k hráčům
+function assignRefereeClasses(players, refereeClasses) {
+    players.forEach(player => {
+        const refereeClass = refereeClasses[player.id];
+        if (refereeClass) {
+            player.refereeClass = refereeClass;  // Přiřazení třídy rozhodčího hráči
+        }
+    });
+}
+
 // Funkce pro zobrazení leaderboardu
 function displayLeaderboard(players) {
     const tableBody = document.querySelector("#leaderboard tbody");
@@ -57,6 +90,7 @@ function displayLeaderboard(players) {
             <td><a href="?id=${player.id}" onclick="showProfile(${player.id}); return false;">${player.nick}</a></td>
             <td>${parseFloat(player.elo).toFixed(2)}</td>
             <td>${player.id}</td> <!-- Zobrazení ID -->
+            <td>${player.refereeClass || "---"}</td> <!-- Zobrazení třídy rozhodčího -->
         `;
         tableBody.appendChild(row);
     });
@@ -67,9 +101,10 @@ function showProfile(playerId) {
     const player = players.find(p => p.id == playerId);
     if (player) {
         document.getElementById("profileName").innerText = player.nick;
-        document.getElementById("profileId").innerText = player.id; // Zobrazení ID v profilu
+        document.getElementById("profileId").innerText = player.id;
         document.getElementById("profileElo").innerText = player.elo;
         document.getElementById("profileMatches").innerText = "Placeholder pro zápasy"; // Placeholder pro zápasy
+        document.getElementById("profileRefereeClass").innerText = player.refereeClass || "---"; // Zobrazení třídy rozhodčího
         document.getElementById("profileModal").style.display = "block";
 
         // Změna URL, aby ukazovala na tento profil
@@ -88,18 +123,15 @@ document.querySelector(".close").addEventListener("click", closeProfile);
 
 // Načteme a zobrazení dat při načtení stránky
 let players = [];
+let refereeClasses = {};
+
 window.onload = function () {
     loadCSV("lok.csv", function (csv) {
-        players = parseCSV(csv);
-        displayLeaderboard(players);
-
-        // Získáme parametr 'id' z URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const playerId = urlParams.get('id'); // Získáme hodnotu parametru 'id'
-
-        if (playerId) {
-            // Pokud je parametr 'id' přítomen, zobrazíme profil hráče s tímto ID
-            showProfile(playerId);
-        }
+        players = parseCSV(csv); // Načteme hráče z CSV
+        loadRefereeClasses("ref.txt", function (data) {
+            refereeClasses = parseRefereeClasses(data); // Načteme třídy rozhodčích z ref.txt
+            assignRefereeClasses(players, refereeClasses); // Přiřadíme třídy rozhodčích k hráčům
+            displayLeaderboard(players); // Zobrazíme leaderboard
+        });
     });
 };
