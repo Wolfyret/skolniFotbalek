@@ -103,7 +103,10 @@ function showProfile(playerId) {
         document.getElementById("profileName").innerText = player.nick;
         document.getElementById("profileId").innerText = player.id;
         document.getElementById("profileElo").innerText = player.elo;
-        document.getElementById("profileMatches").innerText = "Placeholder pro zápasy"; // Placeholder pro zápasy
+        
+        // Místo placeholderu pro zápasy přidáme odkaz na stránku se zápasy hráče
+        document.getElementById("profileMatches").innerHTML = `<a href="zapasy.html?id=${player.id}">Zobrazit zápasy</a>`;
+        
         document.getElementById("profileRefereeClass").innerText = player.refereeClass || "---"; // Zobrazení třídy rozhodčího
         document.getElementById("profileModal").style.display = "block";
 
@@ -111,6 +114,7 @@ function showProfile(playerId) {
         window.history.pushState(null, "", "?id=" + player.id);
     }
 }
+
 
 // Funkce pro zavření modálního okna
 function closeProfile() {
